@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>データベース設計 学習アプリ</title>
+<style>
+:root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;--border:#2e2e2e;--text:#e8e8e8;--muted:#888;--accent:#7c9ff5;--accent2:#5f7de8;--green:#4ade80;--red:#f87171;--yellow:#fbbf24;--radius:10px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Helvetica Neue',sans-serif;font-size:15px;line-height:1.7;display:flex;min-height:100vh;}
+#sidebar{width:240px;min-width:240px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+#sidebar h1{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--muted);padding:0 20px 16px;text-transform:uppercase;}
+.chapter-btn{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;border:none;background:none;color:var(--muted);font-size:13px;text-align:left;width:100%;transition:all .15s;border-left:3px solid transparent;}
+.chapter-btn:hover{color:var(--text);background:var(--surface2);}
+.chapter-btn.active{color:var(--accent);border-left-color:var(--accent);background:rgba(124,159,245,.08);}
+.chapter-btn.done{color:var(--green);}
+.chapter-btn.done.active{color:var(--accent);}
+.chapter-btn.exam-btn{border-top:1px solid var(--border);margin-top:8px;padding-top:16px;color:var(--yellow);}
+.chapter-btn.exam-btn.active{color:var(--yellow);border-left-color:var(--yellow);background:rgba(251,191,36,.08);}
+.ch-num{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.chapter-btn.active .ch-num{background:var(--accent);color:#fff;}
+.chapter-btn.done .ch-num{background:var(--green);color:#000;}
+.exam-btn .ch-num{background:rgba(251,191,36,.2);color:var(--yellow);}
+.exam-btn.active .ch-num{background:var(--yellow);color:#000;}
+.progress-bar-wrap{padding:16px 20px 0;margin-top:auto;}
+.progress-bar-label{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;}
+.progress-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s;}
+#main{flex:1;padding:40px 48px;max-width:800px;}
+.chapter{display:none;}
+.chapter.active{display:block;}
+.chapter-header{margin-bottom:32px;}
+.chapter-tag{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+h2{font-size:26px;font-weight:700;color:var(--text);margin-bottom:12px;}
+.chapter-intro{color:#bbb;font-size:14px;}
+.section{margin-bottom:28px;}
+.section h3{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:10px;letter-spacing:.05em;}
+p{color:#ccc;margin-bottom:12px;font-size:14px;}
+.callout{background:var(--surface2);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-size:14px;color:#ddd;}
+.callout strong{color:var(--accent);}
+.example-box{background:#111820;border:1px solid #1e3a5f;border-radius:var(--radius);padding:16px 18px;margin:14px 0;font-size:13.5px;color:#b8d4f0;}
+.example-box .ex-label{font-size:11px;font-weight:700;letter-spacing:.1em;color:#5b9bd5;text-transform:uppercase;margin-bottom:8px;}
+.example-box ul{padding-left:18px;}
+.example-box li{margin-bottom:4px;}
+.keyword{display:inline-block;background:rgba(124,159,245,.15);color:var(--accent);padding:1px 7px;border-radius:4px;font-size:13px;font-weight:600;}
+.table-wrap{overflow-x:auto;margin:16px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:var(--surface2);color:var(--muted);padding:8px 14px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+td{padding:8px 14px;border-bottom:1px solid var(--border);color:#ccc;}
+tr:last-child td{border-bottom:none;}
+.exercise-box,.quiz-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin:24px 0;}
+.exercise-box h4{font-size:12px;font-weight:700;color:var(--yellow);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;}
+.quiz-box h4{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;}
+.question{margin-bottom:20px;}
+.question p{color:var(--text);font-size:14px;margin-bottom:10px;}
+.options{display:flex;flex-direction:column;gap:8px;}
+.option{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .15s;font-size:14px;color:#ccc;background:var(--surface2);}
+.option:hover{border-color:var(--accent);color:var(--text);}
+.option.selected{border-color:var(--accent);background:rgba(124,159,245,.1);color:var(--text);}
+.option.correct{border-color:var(--green);background:rgba(74,222,128,.1);color:var(--green);}
+.option.wrong{border-color:var(--red);background:rgba(248,113,113,.1);color:var(--red);}
+.option-dot{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;flex-shrink:0;}
+.feedback{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;display:none;}
+.feedback.correct{background:rgba(74,222,128,.1);color:var(--green);display:block;}
+.feedback.wrong{background:rgba(248,113,113,.1);color:var(--red);display:block;}
+.sort-list{display:flex;flex-direction:column;gap:8px;}
+.sort-item{padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:grab;font-size:14px;display:flex;align-items:center;gap:10px;}
+.sort-item:hover{border-color:#555;}
+.sort-handle{color:var(--muted);font-size:16px;}
+.sort-num{width:24px;height:24px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+.scenario{background:var(--surface2);border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:14px;color:#ccc;border-left:3px solid var(--border);}
+.scenario strong{color:var(--text);}
+.btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-yellow{background:var(--yellow);color:#000;}
+.btn-yellow:hover{background:#e5a800;}
+.btn-ghost{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:#555;}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.score-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;}
+.score-badge.good{background:rgba(74,222,128,.15);color:var(--green);}
+.score-badge.ok{background:rgba(251,191,36,.15);color:var(--yellow);}
+.score-badge.bad{background:rgba(248,113,113,.15);color:var(--red);}
+.chapter-nav{display:flex;justify-content:space-between;margin-top:40px;padding-top:24px;border-top:1px solid var(--border);}
+.er-box{background:var(--surface2);border-radius:var(--radius);padding:20px;font-family:monospace;font-size:13px;color:#aaa;line-height:1.8;white-space:pre;overflow-x:auto;margin:12px 0;}
+.result-panel{margin-top:16px;padding:16px;background:var(--surface2);border-radius:var(--radius);font-size:14px;}
+.result-panel.hidden{display:none;}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--border);margin:3px;}
+.chip:hover{border-color:var(--accent);}
+.chip.entity{background:rgba(124,159,245,.15);color:var(--accent);border-color:var(--accent);}
+.chip.attr{background:rgba(74,222,128,.15);color:var(--green);border-color:var(--green);}
+.chip.rel{background:rgba(251,191,36,.15);color:var(--yellow);border-color:var(--yellow);}
+/* Final Exam */
+.exam-progress{display:flex;align-items:center;gap:16px;margin-bottom:24px;}
+.exam-progress-bar{flex:1;height:6px;background:var(--border);border-radius:3px;}
+.exam-progress-fill{height:100%;background:var(--yellow);border-radius:3px;transition:width .3s;}
+.exam-q{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;}
+.exam-q .q-num{font-size:11px;color:var(--yellow);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.exam-q .q-text{font-size:15px;color:var(--text);margin-bottom:16px;font-weight:500;}
+.exam-result-card{background:var(--surface);border-radius:var(--radius);padding:32px;text-align:center;margin-top:24px;}
+.pass-badge{font-size:56px;margin-bottom:12px;}
+.pass-label{font-size:22px;font-weight:700;margin-bottom:8px;}
+.pass-score{font-size:40px;font-weight:900;margin:16px 0;}
+.exam-breakdown{margin-top:24px;text-align:left;}
+.exam-breakdown-item{padding:10px 14px;border-radius:8px;margin-bottom:6px;font-size:13px;display:flex;align-items:flex-start;gap:10px;}
+.exam-breakdown-item.correct-item{background:rgba(74,222,128,.08);color:#ccc;border-left:3px solid var(--green);}
+.exam-breakdown-item.wrong-item{background:rgba(248,113,113,.08);color:#ccc;border-left:3px solid var(--red);}
+</style>
+</head>
+<body>
+<nav id="sidebar">
+  <h1>データベース設計</h1>
+  <button class="chapter-btn active" onclick="showChapter(0)"><span class="ch-num" id="cn0">1</span>データベースとは</button>
+  <button class="chapter-btn" onclick="showChapter(1)"><span class="ch-num" id="cn1">2</span>3層スキーマと設計</button>
+  <button class="chapter-btn" onclick="showChapter(2)"><span class="ch-num" id="cn2">3</span>E-R図とエンティティ</button>
+  <button class="chapter-btn" onclick="showChapter(3)"><span class="ch-num" id="cn3">4</span>主キーとNULL</button>
+  <button class="chapter-btn" onclick="showChapter(4)"><span class="ch-num" id="cn4">5</span>多重度とリレーション</button>
+  <button class="chapter-btn" onclick="showChapter(5)"><span class="ch-num" id="cn5">6</span>強・弱エンティティ</button>
+  <button class="chapter-btn" onclick="showChapter(6)"><span class="ch-num" id="cn6">7</span>スーパー/サブタイプ</button>
+  <button class="chapter-btn exam-btn" onclick="showChapter(7)"><span class="ch-num" id="cn7">★</span>確認テスト</button>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-label" id="progress-label">進捗 0 / 7</div>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+</nav>
+
+<main id="main">
+
+<!-- Ch0 -->
+<div class="chapter active" id="ch0">
+  <div class="chapter-header">
+    <div class="chapter-tag">Chapter 1</div>
+    <h2>データベースとは何か</h2>
+    <p class="chapter-intro">データベースの概念とDBMSの役割を理解しましょう。</p>
+  </div>
+  <div class="section">
+    <h3>データベースの定義</h3>
+    <p>データベースとは、<strong>複数の人で共有・再利用しやすいよう一定の形式で管理されたデータの集合</strong>です。紙の電話帳や宿泊者名簿もデータベースですが、通常はコンピュータ上のものを指します。</p>
+    <div class="example-box">
+      <div class="ex-label">身近な例</div>
+      <ul>
+        <li><strong>Amazon：</strong>数億件の注文・商品・顧客情報を同時に複数のスタッフ・システムが参照・更新している</li>
+        <li><strong>病院の電子カルテ：</strong>医師・看護師・薬剤師が同じ患者の診療記録を同時に参照し、それぞれ異なる情報を書き込む</li>
+        <li><strong>Suica・ICカード：</strong>全国のどの改札でも残高を読み書きできるのはDBが一元管理しているから</li>
+        <li><strong>スマホの連絡先アプリ：</strong>自分だけが使う小さなDBの一例（共有性はないが構造化されたデータ）</li>
+      </ul>
+    </div>
+    <div class="callout"><strong>ポイント：</strong>「複数人が大量データを同時に使う」場面でDBが真価を発揮します。1人だけのメモならDBは不要です。</div>
+  </div>
+  <div class="section">
+    <h3>DBMSとは</h3>
+    <p><span class="keyword">DBMS（データベース管理システム）</span>はデータ操作の細かい制御をアプリの代わりに担うミドルウェアです。</p>
+    <div class="example-box">
+      <div class="ex-label">身近な例</div>
+      <ul>
+        <li><strong>レストランのホールスタッフ：</strong>お客様（アプリ）は「ハンバーグ定食ください」と言うだけ。厨房（DBMS）がどの順番で何を調理するかを管理する。アプリ側は細かいデータ管理を知らなくていい。</li>
+        <li>代表例：MySQL、PostgreSQL（Supabaseで使用）、BigQuery</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>データベースの種類</h3>
+    <div class="table-wrap"><table>
+      <tr><th>種類</th><th>説明</th><th>現在</th></tr>
+      <tr><td>関係型（RDB）</td><td>表形式。SQLで操作。現在の主流</td><td>✅ 主流</td></tr>
+      <tr><td>階層型</td><td>ツリー構造</td><td>❌ ほぼ廃止</td></tr>
+      <tr><td>ネットワーク型</td><td>グラフ構造</td><td>❌ ほぼ廃止</td></tr>
+    </table></div>
+  </div>
+  <div class="exercise-box">
+    <h4>🛠 実践演習：DBが有効？不要？</h4>
+    <div id="ex0-scenarios"></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkEx0()">判定する</button><button class="btn btn-ghost" onclick="resetEx0()">リセット</button></div>
+    <div class="result-panel hidden" id="ex0-result"></div>
+  </div>
+  <div class="quiz-box">
+    <h4>📝 クイズ</h4>
+    <div class="question" id="q0-0">
+      <p>1. DBMSの役割として最も適切なものは？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q0-0')" data-val="a"><span class="option-dot"></span>アプリのUI部分を担当するソフトウェア</div>
+        <div class="option" onclick="selectOption(this,'q0-0')" data-val="b"><span class="option-dot"></span>データベース操作の細かい制御を担うミドルウェア</div>
+        <div class="option" onclick="selectOption(this,'q0-0')" data-val="c"><span class="option-dot"></span>ネットワーク通信を管理するOS機能</div>
+      </div>
+      <div class="feedback" id="fbq0-0"></div>
+    </div>
+    <div class="question" id="q0-1">
+      <p>2. 現在ほぼ使われない形式を2つ選んでください（複数選択）</p>
+      <div class="options" data-answer="a,c" data-multi="true">
+        <div class="option" onclick="selectOption(this,'q0-1')" data-val="a"><span class="option-dot"></span>階層型</div>
+        <div class="option" onclick="selectOption(this,'q0-1')" data-val="b"><span class="option-dot"></span>関係型</div>
+        <div class="option" onclick="selectOption(this,'q0-1')" data-val="c"><span class="option-dot"></span>ネットワーク型</div>
+      </div>
+      <div class="feedback" id="fbq0-1"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkQuiz(0)">採点</button><button class="btn btn-ghost" onclick="resetQuiz(0)">リセット</button></div>
+    <div class="result-panel hidden" id="quiz0-result"></div>
+  </div>
+  <div class="chapter-nav"><span></span><button class="btn btn-primary" onclick="nextChapter(0)">次へ →</button></div>
+</div>
+
+<!-- Ch1 -->
+<div class="chapter" id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-tag">Chapter 2</div>
+    <h2>3層スキーマとDB設計</h2>
+    <p class="chapter-intro">設計の3レイヤーと、設計フェーズの流れを学びます。</p>
+  </div>
+  <div class="section">
+    <h3>3層スキーマ</h3>
+    <div class="table-wrap"><table>
+      <tr><th>層</th><th>名称</th><th>内容</th></tr>
+      <tr><td>①</td><td>概念データモデル</td><td>業務の概念をモデル化（E-R図）</td></tr>
+      <tr><td>②</td><td>論理データモデル</td><td>DBに合わせてテーブル定義に変換</td></tr>
+      <tr><td>③</td><td>物理データモデル</td><td>実際のサーバー・ディスク上のデータ配置</td></tr>
+    </table></div>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — ネットショップを作るとしたら</div>
+      <ul>
+        <li><strong>概念設計：</strong>「お客さん・商品・注文が必要だよね」と整理する段階。E-R図を書く</li>
+        <li><strong>論理設計：</strong>「customersテーブルはid・name・emailカラムを持つ」とテーブル定義にする</li>
+        <li><strong>物理設計：</strong>「このテーブルはSSDの第2パーティションに置き、emailにインデックスを貼る」と決める</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>概念設計のアプローチ2種</h3>
+    <div class="table-wrap"><table>
+      <tr><th>アプローチ</th><th>手順</th><th>向いている場面</th></tr>
+      <tr><td>トップダウン</td><td>E-R図 → スキーマ → 正規化</td><td>全体像が先にイメージできるとき</td></tr>
+      <tr><td>ボトムアップ</td><td>スキーマ → 正規化 → E-R図</td><td>既存の帳票・データから整理するとき</td></tr>
+    </table></div>
+    <div class="example-box">
+      <div class="ex-label">身近な例</div>
+      <ul>
+        <li><strong>トップダウン：</strong>新しいアプリを1から設計するとき。「ユーザー・投稿・コメントが必要」と俯瞰してからテーブルを作る</li>
+        <li><strong>ボトムアップ：</strong>紙の注文書をDB化するとき。既存の用紙の項目を洗い出してからE-R図を描く</li>
+      </ul>
+    </div>
+  </div>
+  <div class="exercise-box">
+    <h4>🛠 実践演習：設計フェーズを正しい順に並べよう</h4>
+    <div class="sort-list" id="sort1" ondragover="dragOver(event)" ondrop="drop(event,'sort1')">
+      <div class="sort-item" draggable="true" ondragstart="dragStart(event,'sort1')" data-order="2"><span class="sort-handle">⠿</span><span class="sort-num">?</span>物理設計：ハードウェア資源を確保し物理的なデータ配置を決定</div>
+      <div class="sort-item" draggable="true" ondragstart="dragStart(event,'sort1')" data-order="0"><span class="sort-handle">⠿</span><span class="sort-num">?</span>概念設計：必要なデータを抽出し概念データモデルを作成</div>
+      <div class="sort-item" draggable="true" ondragstart="dragStart(event,'sort1')" data-order="1"><span class="sort-handle">⠿</span><span class="sort-num">?</span>論理設計：概念データモデルを整理しDBに合わせて変換</div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkSort1()">確認</button><button class="btn btn-ghost" onclick="shuffleSort1()">シャッフル</button></div>
+    <div class="result-panel hidden" id="sort1-result"></div>
+  </div>
+  <div class="quiz-box">
+    <h4>📝 クイズ</h4>
+    <div class="question" id="q1-0">
+      <p>1. テーブル定義を作成するフェーズは？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q1-0')" data-val="a"><span class="option-dot"></span>概念設計</div>
+        <div class="option" onclick="selectOption(this,'q1-0')" data-val="b"><span class="option-dot"></span>論理設計</div>
+        <div class="option" onclick="selectOption(this,'q1-0')" data-val="c"><span class="option-dot"></span>物理設計</div>
+      </div>
+      <div class="feedback" id="fbq1-0"></div>
+    </div>
+    <div class="question" id="q1-1">
+      <p>2. E-R図を最初に作成するのはどちらのアプローチ？</p>
+      <div class="options" data-answer="a">
+        <div class="option" onclick="selectOption(this,'q1-1')" data-val="a"><span class="option-dot"></span>トップダウン</div>
+        <div class="option" onclick="selectOption(this,'q1-1')" data-val="b"><span class="option-dot"></span>ボトムアップ</div>
+      </div>
+      <div class="feedback" id="fbq1-1"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkQuiz(1)">採点</button><button class="btn btn-ghost" onclick="resetQuiz(1)">リセット</button></div>
+    <div class="result-panel hidden" id="quiz1-result"></div>
+  </div>
+  <div class="chapter-nav"><button class="btn btn-ghost" onclick="showChapter(0)">← 前へ</button><button class="btn btn-primary" onclick="nextChapter(1)">次へ →</button></div>
+</div>
+
+<!-- Ch2 -->
+<div class="chapter" id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-tag">Chapter 3</div>
+    <h2>E-R図とエンティティ</h2>
+    <p class="chapter-intro">概念データモデルの表記法と、エンティティ・属性の概念を学びます。</p>
+  </div>
+  <div class="section">
+    <h3>E-R図とは</h3>
+    <p><span class="keyword">E-R図</span>は実世界を<strong>エンティティ（実体）</strong>と<strong>リレーションシップ（関係）</strong>でモデル化した図です。</p>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — Instagramで考える</div>
+      <ul>
+        <li><strong>エンティティ：</strong>ユーザー、投稿、コメント、ハッシュタグ</li>
+        <li><strong>属性：</strong>ユーザー名、フォロワー数、投稿日時、本文</li>
+        <li><strong>リレーション：</strong>「投稿する」（ユーザー→投稿）、「コメントする」（ユーザー→コメント）、「タグ付けする」（投稿→ハッシュタグ）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>エンティティ・インスタンスとは</h3>
+    <p>エンティティは「見たいこと・知りたいこと」を概念化したもの。実態がないもの（予約・注文・イベント）でもエンティティになります。</p>
+    <div class="callout"><strong>エンティティ</strong>＝属性の集まり（設計上の「型」）<br><strong>インスタンス</strong>＝属性値の集まり（実際の1行データ）<br><br>例：「顧客」エンティティの属性＝顧客ID・名前・メール<br>インスタンス例＝「C001 / 田中花子 / hanako@example.com」</div>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — 学校で考える</div>
+      <ul>
+        <li><strong>エンティティ：</strong>生徒、授業、教師、教室、成績</li>
+        <li><strong>インスタンス例（生徒）：</strong>「S001 / 山田太郎 / 3年A組」が1件のインスタンス</li>
+        <li><strong>「成績」は実態がない</strong>がエンティティになれる（生徒ID・科目ID・点数・評価の集まり）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="exercise-box">
+    <h4>🛠 実践演習：エンティティ・属性・リレーションを分類しよう</h4>
+    <p style="font-size:13px;color:#aaa;margin-bottom:12px">各ワードをクリックして分類してください（クリックするたびに切り替わります）</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="classify-chips"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div><div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em;margin-bottom:6px;text-transform:uppercase">エンティティ</div><div style="min-height:44px;border:2px dashed var(--border);border-radius:8px;padding:8px" id="zone-entity"></div></div>
+      <div><div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em;margin-bottom:6px;text-transform:uppercase">属性</div><div style="min-height:44px;border:2px dashed var(--border);border-radius:8px;padding:8px" id="zone-attr"></div></div>
+      <div><div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em;margin-bottom:6px;text-transform:uppercase">リレーション</div><div style="min-height:44px;border:2px dashed var(--border);border-radius:8px;padding:8px" id="zone-rel"></div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkClassify()">確認</button><button class="btn btn-ghost" onclick="resetClassify()">リセット</button></div>
+    <div class="result-panel hidden" id="classify-result"></div>
+  </div>
+  <div class="quiz-box">
+    <h4>📝 クイズ</h4>
+    <div class="question" id="q2-0">
+      <p>1. エンティティの「インスタンス」の正しい説明は？</p>
+      <div class="options" data-answer="c">
+        <div class="option" onclick="selectOption(this,'q2-0')" data-val="a"><span class="option-dot"></span>エンティティが持つ特徴（名前、金額など）</div>
+        <div class="option" onclick="selectOption(this,'q2-0')" data-val="b"><span class="option-dot"></span>エンティティ同士の結びつき</div>
+        <div class="option" onclick="selectOption(this,'q2-0')" data-val="c"><span class="option-dot"></span>属性値の集まり（具体的な1レコード）</div>
+      </div>
+      <div class="feedback" id="fbq2-0"></div>
+    </div>
+    <div class="question" id="q2-1">
+      <p>2.「予約」はエンティティになれますか？</p>
+      <div class="options" data-answer="a">
+        <div class="option" onclick="selectOption(this,'q2-1')" data-val="a"><span class="option-dot"></span>なれる（実態がなくてもよい）</div>
+        <div class="option" onclick="selectOption(this,'q2-1')" data-val="b"><span class="option-dot"></span>なれない（物理的な実態が必要）</div>
+      </div>
+      <div class="feedback" id="fbq2-1"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkQuiz(2)">採点</button><button class="btn btn-ghost" onclick="resetQuiz(2)">リセット</button></div>
+    <div class="result-panel hidden" id="quiz2-result"></div>
+  </div>
+  <div class="chapter-nav"><button class="btn btn-ghost" onclick="showChapter(1)">← 前へ</button><button class="btn btn-primary" onclick="nextChapter(2)">次へ →</button></div>
+</div>
+
+<!-- Ch3 -->
+<div class="chapter" id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-tag">Chapter 4</div>
+    <h2>主キー・外部キー・NULL</h2>
+    <p class="chapter-intro">インスタンスを一意に識別する「キー」とNULLの意味を理解します。</p>
+  </div>
+  <div class="section">
+    <h3>主キー（Primary Key）</h3>
+    <p>インスタンスを<strong>一意に識別できる極小の属性（または属性の組）</strong>を主キーと言います。</p>
+    <div class="callout"><strong>主キーの制約：</strong><br>① <strong>一意性制約</strong>：同じ値が2件以上存在できない<br>② <strong>非NULL制約</strong>：NULLを許可しない</div>
+    <div class="example-box">
+      <div class="ex-label">身近な例</div>
+      <ul>
+        <li><strong>マイナンバー：</strong>国民1人に1つだけ割り当てられる番号。氏名は同姓同名があるためNGだが、マイナンバーは一意。主キーの典型例</li>
+        <li><strong>学籍番号：</strong>同じ学校内で重複しない。「田中くん」は3人いてもS2024-001は1人だけ</li>
+        <li><strong>注文番号：</strong>Amazonの注文番号は重複しない。購入者・商品が同じでも注文ごとに別の番号が付く</li>
+        <li><strong>複合キーの例：</strong>「時間割」テーブルは（曜日・時限・教室）の組み合わせで一意になる</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>外部キー（Foreign Key）</h3>
+    <p>別のエンティティの主キーを参照する属性が<span class="keyword">外部キー（FK）</span>です。テーブル間をつなぐ「橋」の役割を担います。</p>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — 注文と顧客をつなぐ</div>
+      <ul>
+        <li>注文テーブルに「顧客ID」列を持たせることで、その注文が誰のものかを特定できる</li>
+        <li>注文テーブルの「顧客ID」＝外部キー（顧客テーブルの主キーを参照）</li>
+        <li>イメージ：注文書に書かれた「会員番号」で、顧客名簿から氏名・住所を引っ張ってくる</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>NULLとは</h3>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — NULLは「値なし」≠ 0 ≠ 空文字</div>
+      <ul>
+        <li><strong>「まだ決まっていないNULL」：</strong>配送日未定の注文。いずれ日付が入るが、今はNULL</li>
+        <li><strong>「論理的にありえないNULL」：</strong>独身者の「配偶者名」欄。絶対に値が入らない</li>
+        <li><strong>空文字との違い：</strong>アンケートで「名前を入力しなかった（NULL）」と「わざと空白を入力した（空文字）」は意味が違う</li>
+        <li><strong>0との違い：</strong>テスト0点（値あり）と欠席で採点なし（NULL）は別物</li>
+      </ul>
+    </div>
+  </div>
+  <div class="exercise-box">
+    <h4>🛠 実践演習：適切な主キーを選ぼう</h4>
+    <div class="scenario"><strong>シナリオA：</strong>「社員」テーブル（社員番号・氏名・部署名・入社年月日）の主キーは？</div>
+    <div class="options" data-answer="a" id="pk-a" style="margin-bottom:16px">
+      <div class="option" onclick="selectOption(this,'pk-a')" data-val="a"><span class="option-dot"></span>社員番号（会社が一意に管理）</div>
+      <div class="option" onclick="selectOption(this,'pk-a')" data-val="b"><span class="option-dot"></span>氏名（同姓同名がありうる）</div>
+      <div class="option" onclick="selectOption(this,'pk-a')" data-val="c"><span class="option-dot"></span>入社年月日（同日入社が複数いる可能性）</div>
+    </div>
+    <div class="scenario"><strong>シナリオB：</strong>「受講記録」テーブル（学生ID・科目ID・成績）の主キーは？</div>
+    <div class="options" data-answer="c" id="pk-b">
+      <div class="option" onclick="selectOption(this,'pk-b')" data-val="a"><span class="option-dot"></span>学生IDのみ</div>
+      <div class="option" onclick="selectOption(this,'pk-b')" data-val="b"><span class="option-dot"></span>科目IDのみ</div>
+      <div class="option" onclick="selectOption(this,'pk-b')" data-val="c"><span class="option-dot"></span>学生ID ＋ 科目ID（複合キー）</div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkPKEx()">確認</button><button class="btn btn-ghost" onclick="resetPKEx()">リセット</button></div>
+    <div class="result-panel hidden" id="pk-result"></div>
+  </div>
+  <div class="quiz-box">
+    <h4>📝 クイズ</h4>
+    <div class="question" id="q3-0">
+      <p>1. 主キーに適用される制約の組み合わせは？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q3-0')" data-val="a"><span class="option-dot"></span>一意性制約 ＋ 参照制約</div>
+        <div class="option" onclick="selectOption(this,'q3-0')" data-val="b"><span class="option-dot"></span>一意性制約 ＋ 非NULL制約</div>
+        <div class="option" onclick="selectOption(this,'q3-0')" data-val="c"><span class="option-dot"></span>非NULL制約 ＋ 外部キー制約</div>
+      </div>
+      <div class="feedback" id="fbq3-0"></div>
+    </div>
+    <div class="question" id="q3-1">
+      <p>2. 独身者の「配偶者名」フィールドに入れるべき値は？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q3-1')" data-val="a"><span class="option-dot"></span>空文字（""）</div>
+        <div class="option" onclick="selectOption(this,'q3-1')" data-val="b"><span class="option-dot"></span>NULL</div>
+        <div class="option" onclick="selectOption(this,'q3-1')" data-val="c"><span class="option-dot"></span>0</div>
+      </div>
+      <div class="feedback" id="fbq3-1"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkQuiz(3)">採点</button><button class="btn btn-ghost" onclick="resetQuiz(3)">リセット</button></div>
+    <div class="result-panel hidden" id="quiz3-result"></div>
+  </div>
+  <div class="chapter-nav"><button class="btn btn-ghost" onclick="showChapter(2)">← 前へ</button><button class="btn btn-primary" onclick="nextChapter(3)">次へ →</button></div>
+</div>
+
+<!-- Ch4 -->
+<div class="chapter" id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-tag">Chapter 5</div>
+    <h2>多重度とリレーションシップの種類</h2>
+    <p class="chapter-intro">エンティティ間の「数の対応関係」とN:Mの解消方法を学びます。</p>
+  </div>
+  <div class="section">
+    <h3>リレーションシップの種類</h3>
+    <div class="table-wrap"><table>
+      <tr><th>種類</th><th>頻度</th><th>身近な例</th></tr>
+      <tr><td>1 対 1</td><td>△ 珍しい</td><td>社員 ↔ 社員証、日本人 ↔ マイナンバー</td></tr>
+      <tr><td>1 対 多</td><td>✅ 最多</td><td>顧客 → 注文複数件、ブログ筆者 → 記事複数本</td></tr>
+      <tr><td>多 対 多</td><td>⚠ 要解消</td><td>学生 ↔ 科目、商品 ↔ 注文</td></tr>
+    </table></div>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — ECサイトで考える</div>
+      <ul>
+        <li><strong>顧客 → 注文（1:N）：</strong>1人の顧客が何度でも注文できる。注文は必ず1人の顧客に紐づく</li>
+        <li><strong>注文 ↔ 商品（N:M）：</strong>1つの注文に複数商品が入り、1つの商品が複数注文に含まれる → そのまま格納できないので「注文明細」という連関エンティティを作る</li>
+        <li><strong>図書館（著者 ↔ 本 → N:M）：</strong>1人の著者が複数の本を書き、1冊に複数著者が関わることもある → 「執筆」という連関エンティティで解消</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>N:Mの解消：連関エンティティ</h3>
+    <div class="callout">
+      N:Mのままではテーブルに格納できません。<strong>連関エンティティ</strong>を追加して1:N×2に分解します。<br><br>
+      学生 ↔ 科目（N:M）→ <strong>受講テーブル</strong>を追加<br>
+      学生（1）→ 受講（N）← 科目（1）<br><br>
+      連関エンティティの主キー = 両方の主キーを組み合わせた<strong>複合キー</strong>
+    </div>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — Spotifyで考える</div>
+      <ul>
+        <li>プレイリスト ↔ 楽曲（N:M）→「プレイリスト楽曲」テーブルで解消</li>
+        <li>プレイリスト楽曲テーブル：（プレイリストID, 楽曲ID, 追加日時, 並び順）</li>
+        <li>主キー = プレイリストID ＋ 楽曲ID の複合キー</li>
+      </ul>
+    </div>
+  </div>
+  <div class="exercise-box">
+    <h4>🛠 実践演習：1:1 / 1:N / N:M を判定しよう</h4>
+    <div id="rel-exercises"></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkRelEx()">確認</button><button class="btn btn-ghost" onclick="resetRelEx()">リセット</button></div>
+    <div class="result-panel hidden" id="rel-result"></div>
+  </div>
+  <div class="quiz-box">
+    <h4>📝 クイズ</h4>
+    <div class="question" id="q4-0">
+      <p>1. N:Mを解消するために追加するものは？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q4-0')" data-val="a"><span class="option-dot"></span>スーパータイプエンティティ</div>
+        <div class="option" onclick="selectOption(this,'q4-0')" data-val="b"><span class="option-dot"></span>連関エンティティ</div>
+        <div class="option" onclick="selectOption(this,'q4-0')" data-val="c"><span class="option-dot"></span>弱エンティティ</div>
+      </div>
+      <div class="feedback" id="fbq4-0"></div>
+    </div>
+    <div class="question" id="q4-1">
+      <p>2. 最もよく見られるリレーションシップの種類は？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q4-1')" data-val="a"><span class="option-dot"></span>1対1</div>
+        <div class="option" onclick="selectOption(this,'q4-1')" data-val="b"><span class="option-dot"></span>1対多</div>
+        <div class="option" onclick="selectOption(this,'q4-1')" data-val="c"><span class="option-dot"></span>多対多</div>
+      </div>
+      <div class="feedback" id="fbq4-1"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkQuiz(4)">採点</button><button class="btn btn-ghost" onclick="resetQuiz(4)">リセット</button></div>
+    <div class="result-panel hidden" id="quiz4-result"></div>
+  </div>
+  <div class="chapter-nav"><button class="btn btn-ghost" onclick="showChapter(3)">← 前へ</button><button class="btn btn-primary" onclick="nextChapter(4)">次へ →</button></div>
+</div>
+
+<!-- Ch5 -->
+<div class="chapter" id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-tag">Chapter 6</div>
+    <h2>強エンティティと弱エンティティ</h2>
+    <p class="chapter-intro">エンティティの独立性による分類と自己参照を学びます。</p>
+  </div>
+  <div class="section">
+    <h3>強エンティティ vs 弱エンティティ</h3>
+    <div class="table-wrap"><table>
+      <tr><th>種類</th><th>定義</th><th>身近な例</th></tr>
+      <tr><td><strong>強エンティティ</strong></td><td>独立して存在できる</td><td>顧客、商品、社員、部署</td></tr>
+      <tr><td><strong>弱エンティティ</strong></td><td>対応する親エンティティがないと存在できない</td><td>注文明細、売上明細、請求明細</td></tr>
+    </table></div>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — Amazonで考える</div>
+      <ul>
+        <li><strong>注文（強）→ 注文明細（弱）：</strong>「注文A」が削除されたら「注文A-商品1・商品2」という明細も存在できない</li>
+        <li><strong>見分け方のコツ：「○○明細」は弱エンティティの典型</strong></li>
+        <li><strong>ホテルの例：</strong>「部屋」は独立して存在できる（強）。「予約」は部屋と宿泊客がいて初めて意味をなす（弱）という見方もできる</li>
+        <li><strong>請求書（強）→ 請求明細（弱）：</strong>請求書がなければ明細行は存在しない</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>自己参照（ループ構造）</h3>
+    <p>同じエンティティの主キーを外部キーに設定するパターンです。</p>
+    <div class="example-box">
+      <div class="ex-label">身近な例</div>
+      <ul>
+        <li><strong>社員テーブルの上司：</strong>「上司ID」= 同じ社員テーブルの社員IDを参照。部長も課長も一般社員も同じテーブルに入り、上司→部下の階層を表現</li>
+        <li><strong>カテゴリの親子：</strong>「カテゴリ」テーブルで「親カテゴリID」が同じテーブルを参照。「家電 → テレビ → 4Kテレビ」のような入れ子構造</li>
+        <li><strong>SNSのリプライ：</strong>「投稿」テーブルの「返信先投稿ID」が同テーブルの投稿IDを参照</li>
+      </ul>
+    </div>
+  </div>
+  <div class="exercise-box">
+    <h4>🛠 実践演習：強・弱エンティティを判定しよう</h4>
+    <div id="strong-weak-ex"></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkStrongWeak()">確認</button><button class="btn btn-ghost" onclick="resetStrongWeak()">リセット</button></div>
+    <div class="result-panel hidden" id="sw-result"></div>
+  </div>
+  <div class="quiz-box">
+    <h4>📝 クイズ</h4>
+    <div class="question" id="q5-0">
+      <p>1.「注文明細」は何エンティティですか？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q5-0')" data-val="a"><span class="option-dot"></span>強エンティティ</div>
+        <div class="option" onclick="selectOption(this,'q5-0')" data-val="b"><span class="option-dot"></span>弱エンティティ</div>
+      </div>
+      <div class="feedback" id="fbq5-0"></div>
+    </div>
+    <div class="question" id="q5-1">
+      <p>2. 社員テーブルで「上司ID」が同テーブルを参照するパターンを何と呼ぶ？</p>
+      <div class="options" data-answer="a">
+        <div class="option" onclick="selectOption(this,'q5-1')" data-val="a"><span class="option-dot"></span>自己参照（ループ構造）</div>
+        <div class="option" onclick="selectOption(this,'q5-1')" data-val="b"><span class="option-dot"></span>複合キー</div>
+        <div class="option" onclick="selectOption(this,'q5-1')" data-val="c"><span class="option-dot"></span>連関エンティティ</div>
+      </div>
+      <div class="feedback" id="fbq5-1"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkQuiz(5)">採点</button><button class="btn btn-ghost" onclick="resetQuiz(5)">リセット</button></div>
+    <div class="result-panel hidden" id="quiz5-result"></div>
+  </div>
+  <div class="chapter-nav"><button class="btn btn-ghost" onclick="showChapter(4)">← 前へ</button><button class="btn btn-primary" onclick="nextChapter(5)">次へ →</button></div>
+</div>
+
+<!-- Ch6 -->
+<div class="chapter" id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-tag">Chapter 7</div>
+    <h2>スーパータイプとサブタイプ</h2>
+    <p class="chapter-intro">エンティティの継承関係と排他的・共存的サブタイプを学びます。</p>
+  </div>
+  <div class="section">
+    <h3>スーパータイプ・サブタイプとは</h3>
+    <p>エンティティを上位（スーパータイプ）と下位（サブタイプ）に分ける継承構造です。</p>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — 会員制サービスで考える</div>
+      <ul>
+        <li><strong>スーパータイプ「会員」：</strong>全会員共通の属性（会員ID・氏名・登録日）を持つ</li>
+        <li><strong>サブタイプ「個人会員」：</strong>生年月日・趣味など個人特有の属性を追加</li>
+        <li><strong>サブタイプ「法人会員」：</strong>法人番号・担当者名など法人特有の属性を追加</li>
+        <li>E-R図では三角形のマークでスーパー↔サブをつなぐ</li>
+      </ul>
+    </div>
+  </div>
+  <div class="section">
+    <h3>排他的 vs 共存的サブタイプ</h3>
+    <div class="table-wrap"><table>
+      <tr><th>種類</th><th>意味</th><th>身近な例</th></tr>
+      <tr><td><strong>排他的</strong></td><td>いずれか1つのサブタイプにしか属せない</td><td>個人会員か法人会員のどちらか一方のみ</td></tr>
+      <tr><td><strong>共存的</strong></td><td>複数のサブタイプに同時に属せる</td><td>取引先が仕入先かつ得意先にもなれる</td></tr>
+    </table></div>
+    <div class="example-box">
+      <div class="ex-label">身近な例 — 判断のコツ</div>
+      <ul>
+        <li><strong>兼務・兼任があれば共存的：</strong>「社員は正社員か契約社員か」→ 両方兼務はありえない → <strong>排他的</strong></li>
+        <li><strong>取引先：</strong>仕入れもするし売りもする取引先が存在する → <strong>共存的</strong></li>
+        <li><strong>血液型で考える：</strong>A型かつB型は存在しない → <strong>排他的</strong></li>
+        <li><strong>資格保有で考える：</strong>1人が「簿記1級」と「宅建」を同時に持てる → <strong>共存的</strong></li>
+      </ul>
+    </div>
+    <div class="callout"><strong>共存的が排他的に優先される：</strong>1人でも両方に属するケースがあれば共存的。<br>記述がないときは常識で判断：「法人かつ個人」はありえない → 排他的</div>
+  </div>
+  <div class="section">
+    <h3>完全・不完全サブタイプ</h3>
+    <div class="example-box">
+      <div class="ex-label">身近な例</div>
+      <ul>
+        <li><strong>完全なサブタイプ：</strong>「動物園の動物」がサブタイプ「哺乳類・鳥類・爬虫類」のいずれかに必ず入る場合</li>
+        <li><strong>不完全なサブタイプ：</strong>「商品区分」に「その他」がある場合。どのサブタイプにも分類できない商品が存在する</li>
+        <li><strong>見分け方：</strong>サブタイプ識別子（○○区分）の値に「その他」があれば不完全</li>
+      </ul>
+    </div>
+  </div>
+  <div class="exercise-box">
+    <h4>🛠 実践演習：排他的 or 共存的？</h4>
+    <div id="subtype-ex"></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkSubtype()">確認</button><button class="btn btn-ghost" onclick="resetSubtype()">リセット</button></div>
+    <div class="result-panel hidden" id="subtype-result"></div>
+  </div>
+  <div class="quiz-box">
+    <h4>📝 クイズ</h4>
+    <div class="question" id="q6-0">
+      <p>1. 「部署に兼務者が存在する可能性がある」場合のサブタイプは？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q6-0')" data-val="a"><span class="option-dot"></span>排他的サブタイプ</div>
+        <div class="option" onclick="selectOption(this,'q6-0')" data-val="b"><span class="option-dot"></span>共存的サブタイプ</div>
+      </div>
+      <div class="feedback" id="fbq6-0"></div>
+    </div>
+    <div class="question" id="q6-1">
+      <p>2. サブタイプ識別子の値に「その他」がある場合は？</p>
+      <div class="options" data-answer="b">
+        <div class="option" onclick="selectOption(this,'q6-1')" data-val="a"><span class="option-dot"></span>完全なサブタイプ</div>
+        <div class="option" onclick="selectOption(this,'q6-1')" data-val="b"><span class="option-dot"></span>不完全なサブタイプ</div>
+      </div>
+      <div class="feedback" id="fbq6-1"></div>
+    </div>
+    <div class="question" id="q6-2">
+      <p>3. 排他的サブタイプの要件記述として正しいのは？</p>
+      <div class="options" data-answer="a">
+        <div class="option" onclick="selectOption(this,'q6-2')" data-val="a"><span class="option-dot"></span>「仕入先か得意先のどちらか一方にしか登録できない」</div>
+        <div class="option" onclick="selectOption(this,'q6-2')" data-val="b"><span class="option-dot"></span>「仕入先か得意先、または両方に登録できる」</div>
+      </div>
+      <div class="feedback" id="fbq6-2"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="checkQuiz(6)">採点</button><button class="btn btn-ghost" onclick="resetQuiz(6)">リセット</button></div>
+    <div class="result-panel hidden" id="quiz6-result"></div>
+  </div>
+  <div class="chapter-nav"><button class="btn btn-ghost" onclick="showChapter(5)">← 前へ</button><button class="btn btn-primary" onclick="nextChapter(6)">次へ →</button></div>
+</div>
+
+<!-- Ch7: 確認テスト -->
+<div class="chapter" id="ch7">
+  <div class="chapter-header">
+    <div class="chapter-tag">確認テスト</div>
+    <h2>総まとめ確認テスト</h2>
+    <p class="chapter-intro">全チャプターから出題します。20問中16問（80%）以上で合格です。</p>
+  </div>
+  <div id="exam-content">
+    <div style="text-align:center;padding:40px 0">
+      <div style="font-size:48px;margin-bottom:16px">📋</div>
+      <p style="color:#aaa;margin-bottom:24px">問題はランダムに出題されます。何度でも挑戦できます。</p>
+      <button class="btn btn-yellow" style="font-size:16px;padding:14px 32px" onclick="startExam()">テスト開始</button>
+    </div>
+  </div>
+  <div class="chapter-nav"><button class="btn btn-ghost" onclick="showChapter(6)">← チャプターに戻る</button><span></span></div>
+</div>
+
+</main>
+
+<script>
+// ===== State =====
+const TOTAL=7;
+const completed=new Array(TOTAL).fill(false);
+let currentChapter=0;
+
+function showChapter(n){
+  document.querySelectorAll('.chapter').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.chapter-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('ch'+n).classList.add('active');
+  document.querySelectorAll('.chapter-btn')[n].classList.add('active');
+  currentChapter=n;
+  window.scrollTo(0,0);
+}
+
+function nextChapter(n){
+  completed[n]=true;
+  updateProgress();
+  if(n+1<TOTAL)showChapter(n+1);
+  else showChapter(7);
+}
+
+function updateProgress(){
+  const done=completed.filter(Boolean).length;
+  document.getElementById('progress-label').textContent=`進捗 ${done} / ${TOTAL}`;
+  document.getElementById('progress-fill').style.width=(done/TOTAL*100)+'%';
+  completed.forEach((d,i)=>{
+    const btn=document.querySelectorAll('.chapter-btn')[i];
+    const num=document.getElementById('cn'+i);
+    if(d){btn.classList.add('done');num.textContent='✓';}
+  });
+}
+
+// ===== Quiz helpers =====
+const quizAnswers={
+  'q0-0':'b','q0-1':['a','c'],
+  'q1-0':'b','q1-1':'a',
+  'q2-0':'c','q2-1':'a',
+  'q3-0':'b','q3-1':'b',
+  'q4-0':'b','q4-1':'b',
+  'q5-0':'b','q5-1':'a',
+  'q6-0':'b','q6-1':'b','q6-2':'a'
+};
+const quizFB={
+  'q0-0':{b:'正解！DBMSはデータ管理の専任担当ミドルウェアです。',a:'UIはフロントエンドが担当します。',c:'ネットワーク通信はOSが担当します。'},
+  'q0-1':{'a,c':'正解！階層型・ネットワーク型は現在ほぼ廃止。',def:'不正解。階層型とネットワーク型が正解です。'},
+  'q1-0':{b:'正解！テーブル定義は論理設計フェーズです。',a:'概念設計ではE-R図を作成します。',c:'物理設計ではデータ配置を決定します。'},
+  'q1-1':{a:'正解！トップダウンはE-R図から始めます。',b:'ボトムアップはスキーマ作成から始めます。'},
+  'q2-0':{c:'正解！インスタンス＝属性値の集まり（1レコード）。',a:'それは属性の説明です。',b:'それはリレーションシップの説明です。'},
+  'q2-1':{a:'正解！エンティティは実態がない概念（予約・注文）でもOK。',b:'不正解。エンティティに物理的実態は不要です。'},
+  'q3-0':{b:'正解！一意性制約＋非NULL制約が主キーの2大制約。',a:'参照制約は外部キーに適用されます。',c:'外部キー制約はFKに適用されます。'},
+  'q3-1':{b:'正解！論理的に値が定まらない場合はNULL。空文字・0とは別物。',a:'空文字は「値はあるが空」で別の意味。',c:'0は数値のゼロで「値なし」を意味しません。'},
+  'q4-0':{b:'正解！連関エンティティでN:Mを1:N×2に解消。',a:'スーパータイプは継承に使います。',c:'弱エンティティは依存関係に使います。'},
+  'q4-1':{b:'正解！1:Nが最も多い（顧客→注文、投稿→コメントなど）。',a:'1:1は珍しいです。',c:'N:Mはそのままでは格納できず要解消。'},
+  'q5-0':{b:'正解！注文明細は注文なしに存在できない弱エンティティ。',a:'注文明細は独立できません。'},
+  'q5-1':{a:'正解！自己参照はループ構造とも呼ばれます。',b:'複合キーは複数属性の組み合わせ。',c:'連関エンティティはN:M解消に使います。'},
+  'q6-0':{b:'正解！兼務（複数に属す）が存在するなら共存的。',a:'排他的は「いずれか一方のみ」の場合。'},
+  'q6-1':{b:'正解！「その他」があれば分類できないインスタンスが存在→不完全。',a:'完全はすべてのインスタンスがいずれかに含まれる場合。'},
+  'q6-2':{a:'正解！「どちらか一方にしか」が排他的の表現。',b:'「または両方」は共存的の表現です。'}
+};
+const quizGroups={
+  0:['q0-0','q0-1'],1:['q1-0','q1-1'],2:['q2-0','q2-1'],
+  3:['q3-0','q3-1'],4:['q4-0','q4-1'],5:['q5-0','q5-1'],
+  6:['q6-0','q6-1','q6-2']
+};
+
+function selectOption(el,qid){
+  const cont=document.getElementById(qid);
+  const isMulti=cont.querySelector('.options')?.dataset.multi;
+  if(!isMulti)cont.querySelectorAll('.option').forEach(o=>o.classList.remove('selected'));
+  el.classList.toggle('selected');
+}
+
+function checkQuiz(chIdx){
+  const qs=quizGroups[chIdx];
+  let correct=0;
+  qs.forEach(qid=>{
+    const cont=document.getElementById(qid);
+    if(!cont)return;
+    const opts=cont.querySelector('.options');
+    const isMulti=opts?.dataset.multi;
+    const ans=quizAnswers[qid];
+    const fb=document.getElementById('fbq'+qid.replace('q',''));
+    if(isMulti){
+      const sel=[...cont.querySelectorAll('.option.selected')].map(o=>o.dataset.val).sort().join(',');
+      const exp=Array.isArray(ans)?ans.slice().sort().join(','):ans;
+      const ok=sel===exp;
+      cont.querySelectorAll('.option').forEach(o=>{
+        const v=o.dataset.val;
+        if((Array.isArray(ans)?ans:ans.split(',')).includes(v))o.classList.add('correct');
+        else if(o.classList.contains('selected'))o.classList.add('wrong');
+        o.classList.remove('selected');
+      });
+      if(fb){fb.className='feedback '+(ok?'correct':'wrong');fb.textContent=(ok?'✓ ':' ✗ ')+(quizFB[qid]?.[ok?exp:'def']||（ok?'正解！':'不正解です。'));}
+      if(ok)correct++;
+    }else{
+      const sel=cont.querySelector('.option.selected');
+      const val=sel?.dataset.val;
+      const ok=val===ans;
+      cont.querySelectorAll('.option').forEach(o=>{
+        if(o.dataset.val===ans)o.classList.add('correct');
+        else if(o.classList.contains('selected'))o.classList.add('wrong');
+        o.classList.remove('selected');
+      });
+      if(fb){fb.className='feedback '+(ok?'correct':'wrong');fb.textContent=(ok?'✓ ':'✗ ')+(quizFB[qid]?.[ok?ans:(val||'_')]||（ok?'正解！':'不正解。正解は '+ans+' です。'));}
+      if(ok)correct++;
+    }
+  });
+  const total=qs.length;
+  const r=document.getElementById('quiz'+chIdx+'-result');
+  if(!r)return;
+  r.classList.remove('hidden');
+  const pct=Math.round(correct/total*100);
+  const cls=pct===100?'good':pct>=50?'ok':'bad';
+  r.innerHTML=`<span class="score-badge ${cls}">${pct===100?'🎉':pct>=50?'📖':'📚'} ${correct}/${total}問正解（${pct}%）</span>`+(pct===100?'<span style="font-size:13px;color:var(--green);margin-left:12px">完璧！次へ進みましょう。</span>':'<span style="font-size:13px;color:#888;margin-left:12px">もう一度確認してみましょう。</span>');
+}
+
+function resetQuiz(chIdx){
+  quizGroups[chIdx].forEach(qid=>{
+    const cont=document.getElementById(qid);
+    if(!cont)return;
+    cont.querySelectorAll('.option').forEach(o=>o.className='option');
+    const fb=document.getElementById('fbq'+qid.replace('q',''));
+    if(fb)fb.className='feedback';
+  });
+  const r=document.getElementById('quiz'+chIdx+'-result');
+  if(r)r.classList.add('hidden');
+}
+
+// ===== Ex0 =====
+const ex0Data=[
+  {text:'全国の病院が患者の診療記録を共有・参照する',answer:'yes'},
+  {text:'自分1人だけの買い物メモをスマホに書く',answer:'no'},
+  {text:'ECサイトで100万件の商品・注文・顧客を管理する',answer:'yes'},
+  {text:'個人が自分だけが読む日記を書く',answer:'no'},
+  {text:'全社員の勤怠を複数部署が同時に参照・更新する',answer:'yes'},
+];
+const ex0Ans={};
+
+function renderEx0(){
+  document.getElementById('ex0-scenarios').innerHTML=ex0Data.map((d,i)=>`
+    <div class="scenario" id="ex0-s${i}"><strong>${d.text}</strong>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" id="ex0-yes${i}" onclick="pickEx0(${i},'yes',this)">✅ DBが有効</button>
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" id="ex0-no${i}" onclick="pickEx0(${i},'no',this)">❌ 不要</button>
+    </div></div>`).join('');
+}
+
+function pickEx0(i,val,btn){
+  ex0Ans[i]=val;
+  const s=document.getElementById('ex0-s'+i);
+  s.querySelectorAll('button').forEach(b=>{b.style.background='';b.style.color='';b.style.borderColor='';});
+  btn.style.background='rgba(124,159,245,.2)';btn.style.color='var(--accent)';btn.style.borderColor='var(--accent)';
+}
+
+function checkEx0(){
+  let correct=0;
+  ex0Data.forEach((d,i)=>{
+    const s=document.getElementById('ex0-s'+i);
+    const ok=ex0Ans[i]===d.answer;
+    s.style.borderLeftColor=ok?'var(--green)':'var(--red)';
+    if(ok)correct++;
+  });
+  const r=document.getElementById('ex0-result');r.classList.remove('hidden');
+  r.innerHTML=correct===ex0Data.length?'<span class="score-badge good">🎉 全問正解！</span>':`<span class="score-badge ${correct>=3?'ok':'bad'}">${correct}/${ex0Data.length} 正解</span><span style="font-size:13px;color:#888;margin-left:10px">赤いシナリオを見直しましょう。</span>`;
+}
+
+function resetEx0(){Object.keys(ex0Ans).forEach(k=>delete ex0Ans[k]);renderEx0();document.getElementById('ex0-result').classList.add('hidden');}
+
+// ===== Sort (Ch1) =====
+let dragSrc=null;
+function dragStart(e,lid){dragSrc=e.currentTarget;e.dataTransfer.effectAllowed='move';}
+function dragOver(e){e.preventDefault();return false;}
+function drop(e,lid){
+  e.preventDefault();
+  const list=document.getElementById(lid);
+  const items=[...list.querySelectorAll('.sort-item')];
+  const target=e.target.closest('.sort-item');
+  if(!target||target===dragSrc)return;
+  const si=items.indexOf(dragSrc),ti=items.indexOf(target);
+  if(si<ti)list.insertBefore(dragSrc,target.nextSibling);else list.insertBefore(dragSrc,target);
+}
+function checkSort1(){
+  const list=document.getElementById('sort1');
+  const items=[...list.querySelectorAll('.sort-item')];
+  const orders=items.map(i=>parseInt(i.dataset.order));
+  const correct=orders[0]===0&&orders[1]===1&&orders[2]===2;
+  items.forEach((item,i)=>{item.querySelector('.sort-num').textContent=i+1;item.style.borderColor=orders[i]===i?'var(--green)':'var(--red)';item.style.color=orders[i]===i?'var(--green)':'var(--red)';});
+  const r=document.getElementById('sort1-result');r.classList.remove('hidden');
+  r.innerHTML=correct?'<span class="score-badge good">🎉 正解！概念設計→論理設計→物理設計</span>':'<span class="score-badge bad">順序が違います。正解：概念設計→論理設計→物理設計</span>';
+}
+function shuffleSort1(){
+  const list=document.getElementById('sort1');
+  const items=[...list.querySelectorAll('.sort-item')];
+  items.sort(()=>Math.random()-.5);
+  items.forEach(i=>{i.querySelector('.sort-num').textContent='?';i.style.borderColor='';i.style.color='';list.appendChild(i);});
+  document.getElementById('sort1-result').classList.add('hidden');
+}
+
+// ===== Classify (Ch2) =====
+const classifyData=[
+  {text:'顧客',answer:'entity'},{text:'注文',answer:'entity'},{text:'商品',answer:'entity'},
+  {text:'顧客ID',answer:'attr'},{text:'注文日',answer:'attr'},{text:'価格',answer:'attr'},{text:'氏名',answer:'attr'},
+  {text:'注文する',answer:'rel'},{text:'含む',answer:'rel'},{text:'届ける',answer:'rel'},
+];
+function renderClassify(){
+  document.getElementById('classify-chips').innerHTML=classifyData.map((d,i)=>`<div class="chip" id="chip${i}" onclick="cycleClassify('chip${i}')">${d.text}</div>`).join('');
+  ['entity','attr','rel'].forEach(z=>document.getElementById('zone-'+z).innerHTML='');
+}
+function cycleClassify(id){
+  const chip=document.getElementById(id);
+  const zones=['entity','attr','rel'];
+  const cur=chip.dataset.zone||'';
+  const next=zones[(zones.indexOf(cur)+1)%zones.length];
+  chip.dataset.zone=next;chip.className='chip '+next;
+}
+function checkClassify(){
+  let correct=0;
+  classifyData.forEach((d,i)=>{
+    const chip=document.getElementById('chip'+i);
+    const ok=chip.dataset.zone===d.answer;
+    chip.style.outline='2px solid '+(ok?'var(--green)':'var(--red)');
+    if(ok)correct++;
+  });
+  const r=document.getElementById('classify-result');r.classList.remove('hidden');
+  const pct=Math.round(correct/classifyData.length*100);
+  r.innerHTML=`<span class="score-badge ${pct===100?'good':pct>=70?'ok':'bad'}">${correct}/${classifyData.length} 正解（${pct}%）</span>`;
+}
+function resetClassify(){
+  classifyData.forEach((_,i)=>{const c=document.getElementById('chip'+i);c.dataset.zone='';c.className='chip';c.style.outline='';});
+  document.getElementById('classify-result').classList.add('hidden');
+}
+
+// ===== PK Ex (Ch3) =====
+function checkPKEx(){
+  const aOk=document.querySelector('#pk-a .option.selected')?.dataset.val==='a';
+  const bOk=document.querySelector('#pk-b .option.selected')?.dataset.val==='c';
+  document.querySelectorAll('#pk-a .option').forEach(o=>{if(o.dataset.val==='a')o.classList.add('correct');else if(o.classList.contains('selected'))o.classList.add('wrong');});
+  document.querySelectorAll('#pk-b .option').forEach(o=>{if(o.dataset.val==='c')o.classList.add('correct');else if(o.classList.contains('selected'))o.classList.add('wrong');});
+  const r=document.getElementById('pk-result');r.classList.remove('hidden');
+  const score=(aOk?1:0)+(bOk?1:0);
+  r.innerHTML=score===2?'<span class="score-badge good">🎉 両方正解！</span><span style="font-size:13px;color:#888;margin-left:10px">A:社員番号、B:学生ID+科目IDの複合キー</span>':`<span class="score-badge ${score===1?'ok':'bad'}">${score}/2 正解</span><span style="font-size:13px;color:#888;margin-left:10px">A:社員番号、B:複合キーが正解</span>`;
+}
+function resetPKEx(){document.querySelectorAll('#pk-a .option,#pk-b .option').forEach(o=>o.className='option');document.getElementById('pk-result').classList.add('hidden');}
+
+// ===== Rel Ex (Ch4) =====
+const relData=[
+  {text:'1人の顧客が複数の注文をする',answer:'1:N',id:'rel0'},
+  {text:'1冊の本には1つのISBNコードが対応する',answer:'1:1',id:'rel1'},
+  {text:'学生は複数科目を受講し、科目には複数学生が受講する',answer:'N:M',id:'rel2'},
+  {text:'1つの部署に複数の社員が所属する',answer:'1:N',id:'rel3'},
+  {text:'著者と書籍（1人が複数執筆、1冊に複数著者もあり）',answer:'N:M',id:'rel4'},
+];
+const relAns={};
+function renderRelEx(){
+  document.getElementById('rel-exercises').innerHTML=relData.map((d,i)=>`
+    <div class="scenario" id="relsc${i}"><strong>${d.text}</strong>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      ${['1:1','1:N','N:M'].map(t=>`<button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="pickRel(${i},'${t}',this)">${t}</button>`).join('')}
+    </div></div>`).join('');
+}
+function pickRel(i,val,btn){
+  relAns[i]=val;
+  const s=document.getElementById('relsc'+i);
+  s.querySelectorAll('button').forEach(b=>{b.style.background='';b.style.color='';b.style.borderColor='';});
+  btn.style.background='rgba(124,159,245,.2)';btn.style.color='var(--accent)';btn.style.borderColor='var(--accent)';
+}
+function checkRelEx(){
+  let correct=0;
+  relData.forEach((d,i)=>{
+    const s=document.getElementById('relsc'+i);
+    const ok=relAns[i]===d.answer;
+    s.style.borderLeftColor=ok?'var(--green)':'var(--red)';
+    if(!ok&&!s.querySelector('.rel-hint')){const h=document.createElement('div');h.className='rel-hint';h.style.cssText='font-size:12px;color:var(--red);margin-top:4px';h.textContent='正解: '+d.answer;s.appendChild(h);}
+    if(ok)correct++;
+  });
+  const r=document.getElementById('rel-result');r.classList.remove('hidden');
+  r.innerHTML=`<span class="score-badge ${correct===relData.length?'good':correct>=3?'ok':'bad'}">${correct}/${relData.length} 正解</span>`;
+}
+function resetRelEx(){Object.keys(relAns).forEach(k=>delete relAns[k]);renderRelEx();document.getElementById('rel-result').classList.add('hidden');}
+
+// ===== Strong/Weak Ex (Ch5) =====
+const swData=[
+  {text:'売上',answer:'強'},{text:'売上明細',answer:'弱'},{text:'顧客',answer:'強'},
+  {text:'注文',answer:'強'},{text:'注文明細',answer:'弱'},{text:'商品',answer:'強'},
+];
+const swAns={};
+function renderSWEx(){
+  document.getElementById('strong-weak-ex').innerHTML=swData.map((d,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="width:100px;font-size:14px;color:#ccc">${d.text}</span>
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" id="sw-s${i}" onclick="pickSW(${i},'強',this)">💪 強</button>
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" id="sw-w${i}" onclick="pickSW(${i},'弱',this)">🔗 弱</button>
+    </div>`).join('');
+}
+function pickSW(i,val,btn){
+  swAns[i]=val;
+  [document.getElementById('sw-s'+i),document.getElementById('sw-w'+i)].forEach(b=>{if(b){b.style.background='';b.style.color='';b.style.borderColor='';}});
+  btn.style.background='rgba(124,159,245,.2)';btn.style.color='var(--accent)';btn.style.borderColor='var(--accent)';
+}
+function checkStrongWeak(){
+  let correct=0;
+  swData.forEach((d,i)=>{
+    const ok=swAns[i]===d.answer;
+    const sBtn=document.getElementById('sw-s'+i),wBtn=document.getElementById('sw-w'+i);
+    (d.answer==='強'?sBtn:wBtn).style.borderColor='var(--green)';
+    if(swAns[i]&&!ok)(swAns[i]==='強'?sBtn:wBtn).style.borderColor='var(--red)';
+    if(ok)correct++;
+  });
+  const r=document.getElementById('sw-result');r.classList.remove('hidden');
+  r.innerHTML=`<span class="score-badge ${correct===swData.length?'good':correct>=4?'ok':'bad'}">${correct}/${swData.length} 正解</span><span style="font-size:13px;color:#888;margin-left:10px">○○明細は弱エンティティの典型です。</span>`;
+}
+function resetStrongWeak(){Object.keys(swAns).forEach(k=>delete swAns[k]);renderSWEx();document.getElementById('sw-result').classList.add('hidden');}
+
+// ===== Subtype Ex (Ch6) =====
+const stData=[
+  {text:'会員は「法人会員」か「個人会員」のどちらか一方のみ。両方兼ねることはない。',answer:'排他的'},
+  {text:'取引先は「仕入先」か「得意先」、または両方に登録できる。',answer:'共存的'},
+  {text:'社員は「正社員」か「契約社員」のいずれか一方のみ。',answer:'排他的'},
+  {text:'部署に兼務者が存在するため、社員は複数の役職区分に属しうる。',answer:'共存的'},
+];
+const stAns={};
+function renderSubtypeEx(){
+  document.getElementById('subtype-ex').innerHTML=stData.map((d,i)=>`
+    <div class="scenario" id="stsc${i}"><strong>${d.text}</strong>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="pickST(${i},'排他的',this)">🔴 排他的</button>
+      <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="pickST(${i},'共存的',this)">🟢 共存的</button>
+    </div></div>`).join('');
+}
+function pickST(i,val,btn){
+  stAns[i]=val;
+  const s=document.getElementById('stsc'+i);
+  s.querySelectorAll('button').forEach(b=>{b.style.background='';b.style.color='';b.style.borderColor='';});
+  btn.style.background='rgba(124,159,245,.2)';btn.style.color='var(--accent)';btn.style.borderColor='var(--accent)';
+}
+function checkSubtype(){
+  let correct=0;
+  stData.forEach((d,i)=>{
+    const s=document.getElementById('stsc'+i);
+    const ok=stAns[i]===d.answer;
+    s.style.borderLeftColor=ok?'var(--green)':'var(--red)';
+    if(!ok&&!s.querySelector('.st-hint')){const h=document.createElement('div');h.className='st-hint';h.style.cssText='font-size:12px;color:var(--red);margin-top:4px';h.textContent='正解: '+d.answer;s.appendChild(h);}
+    if(ok)correct++;
+  });
+  const r=document.getElementById('subtype-result');r.classList.remove('hidden');
+  r.innerHTML=`<span class="score-badge ${correct===stData.length?'good':correct>=2?'ok':'bad'}">${correct}/${stData.length} 正解</span>`;
+}
+function resetSubtype(){Object.keys(stAns).forEach(k=>delete stAns[k]);renderSubtypeEx();document.getElementById('subtype-result').classList.add('hidden');}
+
+// ===== 確認テスト =====
+const QUESTION_POOL=[
+  {q:'DBMSとは何ですか？',opts:['データベース操作の細かい制御を担うミドルウェア','アプリのUI部分を担当するソフトウェア','ネットワーク通信を管理するOS機能'],ans:0,exp:'DBMSはデータ管理の専任担当。アプリはDBMSに命令するだけで、細かい制御はDBMSが担います。'},
+  {q:'現在ほぼ使われなくなったデータベース形式はどれですか？',opts:['関係型（RDB）','階層型','オブジェクト指向型'],ans:1,exp:'階層型とネットワーク型は現在ほぼ廃止。現在は関係型（RDB）が主流です。'},
+  {q:'3層スキーマの設計フェーズを正しい順に並べたものは？',opts:['概念設計→論理設計→物理設計','論理設計→概念設計→物理設計','物理設計→論理設計→概念設計'],ans:0,exp:'概念（E-R図）→論理（テーブル定義）→物理（データ配置）の順が正しい順序です。'},
+  {q:'テーブル定義（スキーマ作成）を行うのはどの設計フェーズですか？',opts:['概念設計','論理設計','物理設計'],ans:1,exp:'論理設計フェーズでテーブル定義を作成します。概念設計ではE-R図を作ります。'},
+  {q:'E-R図を最初に作成するのはどちらのアプローチですか？',opts:['トップダウンアプローチ','ボトムアップアプローチ'],ans:0,exp:'トップダウンは「E-R図→スキーマ→正規化」の順。ボトムアップはスキーマ作成から始めます。'},
+  {q:'エンティティの「インスタンス」とは何ですか？',opts:['エンティティが持つ特徴（名前・金額など）','属性値の集まり（具体的な1レコード）','エンティティ同士の結びつき'],ans:1,exp:'インスタンス＝属性値の集まり（テーブルの1行）。エンティティは「型」でインスタンスはその「実体データ」。'},
+  {q:'「予約」はエンティティになれますか？',opts:['なれる（実態がなくてもよい）','なれない（物理的な実態が必要）'],ans:0,exp:'エンティティは実態がない概念（予約・注文・イベント）でもなれます。'},
+  {q:'主キーに適用される2つの制約の正しい組み合わせは？',opts:['一意性制約＋参照制約','一意性制約＋非NULL制約','非NULL制約＋外部キー制約'],ans:1,exp:'主キーは①一意性制約（重複不可）と②非NULL制約（NULL不可）の2つが必須です。'},
+  {q:'「受講記録」テーブル（学生ID・科目ID・成績）の主キーとして最適なものは？',opts:['学生IDのみ','科目IDのみ','学生ID＋科目IDの複合キー'],ans:2,exp:'学生IDだけでは同一学生が複数科目を受講できず、科目IDだけでも複数学生が登録できません。複合キーが正解。'},
+  {q:'マイナンバーが主キーの例として適切なのはなぜですか？',opts:['国が発行するから','国民1人に1つだけ割り当てられ重複がないから','電子的に管理されているから'],ans:1,exp:'主キーの条件は一意性（重複なし）と非NULLです。マイナンバーは1人に1つだけ→一意性を満たします。'},
+  {q:'独身者の「配偶者名」フィールドに入れるべき正しい値は？',opts:['空文字（""）','NULL','0'],ans:1,exp:'論理的に値が定まらない場合はNULLが正解。空文字（""）は「値はあるが空」、0は数値ゼロで意味が異なります。'},
+  {q:'外部キー（FK）の役割は何ですか？',opts:['テーブルの各行を一意に識別する','別のテーブルの主キーを参照してテーブル間をつなぐ','NULL値を格納するための特別な列'],ans:1,exp:'外部キーは別テーブルの主キーを参照する「橋」の役割。注文テーブルの顧客IDが顧客テーブルをリンクする例が典型。'},
+  {q:'最もよく見られるリレーションシップの種類は？',opts:['1対1','1対多','多対多'],ans:1,exp:'1:Nが最多。顧客→注文、ブログ筆者→記事、部署→社員などが典型例です。'},
+  {q:'多対多（N:M）のリレーションシップを解消するために追加するものは？',opts:['スーパータイプエンティティ','連関エンティティ','弱エンティティ'],ans:1,exp:'連関エンティティを追加して「N:M」を「1:N×2」に分解します。受講テーブル（学生↔科目）が典型例。'},
+  {q:'連関エンティティの主キーは何になりますか？',opts:['連関エンティティ固有の番号のみ','両方の核エンティティの主キーを組み合わせた複合キー','最初に追加した属性'],ans:1,exp:'連関エンティティの主キー＝両方の核エンティティの主キーの組み合わせ（複合キー）。それぞれが外部キーにもなります。'},
+  {q:'1対1（1:1）のリレーションシップとして適切な例はどれですか？',opts:['顧客と注文','社員と社員証','学生と科目'],ans:1,exp:'社員1人に社員証が1枚のみ対応するのが1:1の典型。顧客→注文は1:N、学生↔科目はN:Mです。'},
+  {q:'弱エンティティの説明として正しいのはどれですか？',opts:['他のインスタンスに関係なく独立して存在できるエンティティ','対応する親エンティティが存在するときだけ存在できるエンティティ','主キーを持たないエンティティ'],ans:1,exp:'弱エンティティは親エンティティ依存。注文明細は注文がないと存在できません。「○○明細」が典型例です。'},
+  {q:'弱エンティティの典型的なキーワードは何ですか？',opts:['○○管理','○○明細','○○リスト'],ans:1,exp:'「○○明細」（注文明細・売上明細・請求明細）は弱エンティティの典型。親エンティティがないと存在できません。'},
+  {q:'自己参照（ループ構造）の具体例として正しいのはどれですか？',opts:['注文テーブルが顧客テーブルを参照する','社員テーブルの「上司ID」が同テーブルの社員IDを参照する','商品テーブルが注文明細テーブルを参照する'],ans:1,exp:'自己参照は同一テーブルの主キーを外部キーに設定するパターン。階層構造の表現によく使われます。'},
+  {q:'スーパータイプとサブタイプの説明として正しいのはどれですか？',opts:['スーパータイプは詳細情報を持ち、サブタイプは共通情報を持つ','スーパータイプは共通情報を持ち、サブタイプは固有の追加属性を持つ','スーパータイプとサブタイプは同じ情報を重複して持つ'],ans:1,exp:'スーパータイプ＝共通属性（会員IDなど）、サブタイプ＝固有の追加属性（法人番号・生年月日など）。'},
+  {q:'排他的サブタイプの説明として正しいのはどれですか？',opts:['インスタンスが複数のサブタイプに同時に属せる','インスタンスはいずれか一つのサブタイプにしか属せない','インスタンスがどのサブタイプにも属さない'],ans:1,exp:'排他的＝「どちらか一方のみ」。法人会員か個人会員かどちらか一方のみが典型例。'},
+  {q:'共存的サブタイプが生じる条件として正しいのはどれですか？',opts:['全てのインスタンスが必ず1つのサブタイプに属する','1つでも複数のサブタイプに同時に属するインスタンスが存在する','インスタンスがどのサブタイプにも属さない可能性がある'],ans:1,exp:'共存的は1人でも「仕入先かつ得意先」のようなケースが存在する場合。共存的が排他的に優先されます。'},
+  {q:'「不完全なサブタイプ」の見分け方として正しいのはどれですか？',opts:['サブタイプが1つしかない','サブタイプ識別子の値に「その他」がある','全インスタンスがいずれかのサブタイプに含まれる'],ans:1,exp:'「その他」という値があれば、どのサブタイプにも分類できないインスタンスが存在→不完全なサブタイプ。'},
+  {q:'次のうち、データベースが特に有効な場面はどれですか？',opts:['個人が1人だけ使うメモ帳','全国の医師が共有する患者の電子カルテ','自分だけが読む日記アプリ'],ans:1,exp:'複数人が大量データを共同利用する場面でDBが真価を発揮。個人専用・1人利用にはDBは過剰です。'},
+  {q:'ボトムアップアプローチの特徴として正しいのはどれですか？',opts:['E-R図を最初に作成してからスキーマを作る','既存の帳票や項目を洗い出してからE-R図を作る','物理設計から始める'],ans:1,exp:'ボトムアップ＝データを細かく洗い出してから全体像を構築。既存帳票のDB化に向いています。'},
+  {q:'「多重度」の説明として正しいのはどれですか？',opts:['エンティティの属性の数','エンティティタイプとリレーションシップの数の対応関係','テーブルの行数'],ans:1,exp:'多重度＝エンティティ間の数の対応関係（1:1, 1:N, N:M）。オプショナリティはそこに0を含むかどうかの区別。'},
+  {q:'「オプショナリティ」とは何ですか？',opts:['テーブルにオプション列を追加すること','多重度に0を含むかどうかを区別すること','主キーをオプションにすること'],ans:1,exp:'オプショナリティ＝多重度に0が含まれるかどうかの区別。例：顧客は注文が0件でも存在できる（0対多）。'},
+  {q:'「2つ以上の属性を組み合わせた主キー」を何と呼びますか？',opts:['外部キー','複合キー（連結キー）','スーパーキー'],ans:1,exp:'複合キー（連結キー）は2つ以上の属性の組み合わせで構成される主キー。受講テーブルの（学生ID, 科目ID）が典型例。'},
+  {q:'E-R図の構成要素として正しい組み合わせは？',opts:['エンティティとリレーションシップ','テーブルとカラム','クラスとメソッド'],ans:0,exp:'E-R図＝エンティティ（実体）＋リレーションシップ（関係）。テーブル・カラムはRDB、クラス・メソッドはオブジェクト指向の用語。'},
+  {q:'次のうち強エンティティはどれですか？',opts:['注文明細（注文がないと存在できない）','顧客（独立して存在できる）','売上明細（売上がないと存在できない）'],ans:1,exp:'顧客は独立して存在できる→強エンティティ。「○○明細」は親がないと存在できない→弱エンティティ。'},
+  {q:'概念設計の説明として正しいのはどれですか？',opts:['ハードウェア上のデータ配置を決定する','必要なデータを抽出し概念データモデルを作成する','テーブル定義を作成する'],ans:1,exp:'概念設計＝業務上必要なデータを抽出しE-R図などで概念モデルを作成するフェーズ。'},
+];
+
+let examQuestions=[];
+let examUserAnswers=[];
+let examCurrentQ=0;
+
+function startExam(){
+  const shuffled=[...QUESTION_POOL].sort(()=>Math.random()-.5);
+  examQuestions=shuffled.slice(0,20);
+  examUserAnswers=new Array(20).fill(-1);
+  examCurrentQ=0;
+  renderExam();
+}
+
+function renderExam(){
+  const cont=document.getElementById('exam-content');
+  const total=examQuestions.length;
+  const answered=examUserAnswers.filter(a=>a!==-1).length;
+  cont.innerHTML=`
+    <div class="exam-progress">
+      <span style="font-size:13px;color:var(--muted)">${answered}/${total}問回答済み</span>
+      <div class="exam-progress-bar"><div class="exam-progress-fill" style="width:${answered/total*100}%"></div></div>
+    </div>
+    <div id="exam-questions">
+      ${examQuestions.map((q,i)=>`
+        <div class="exam-q">
+          <div class="q-num">問 ${i+1} / ${total}</div>
+          <div class="q-text">${q.q}</div>
+          <div class="options">
+            ${q.opts.map((o,oi)=>`<div class="option ${examUserAnswers[i]===oi?'selected':''}" onclick="pickExamAns(${i},${oi},this)">${o}</div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+    <div class="btn-row" style="margin-top:24px">
+      <button class="btn btn-yellow" style="font-size:15px;padding:12px 28px" onclick="submitExam()">採点する（${answered}/${total}問回答）</button>
+      <button class="btn btn-ghost" onclick="startExam()">問題を入れ替えて再挑戦</button>
+    </div>`;
+}
+
+function pickExamAns(qi,oi,el){
+  examUserAnswers[qi]=oi;
+  const allOpts=el.closest('.exam-q').querySelectorAll('.option');
+  allOpts.forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  const answered=examUserAnswers.filter(a=>a!==-1).length;
+  const btn=document.querySelector('#exam-content .btn-yellow');
+  if(btn)btn.textContent=`採点する（${answered}/${examQuestions.length}問回答）`;
+}
+
+function submitExam(){
+  const total=examQuestions.length;
+  let correct=0;
+  const results=examQuestions.map((q,i)=>{
+    const ok=examUserAnswers[i]===q.ans;
+    if(ok)correct++;
+    return{q:q.q,selected:examUserAnswers[i],correct:q.ans,opts:q.opts,exp:q.exp,ok};
+  });
+  const pct=Math.round(correct/total*100);
+  const pass=pct>=80;
+  const cont=document.getElementById('exam-content');
+  cont.innerHTML=`
+    <div class="exam-result-card">
+      <div class="pass-badge">${pass?'🎉':'📚'}</div>
+      <div class="pass-label" style="color:${pass?'var(--green)':'var(--red)'}">${pass?'合格！':'不合格 — もう一度挑戦しましょう'}</div>
+      <div class="pass-score" style="color:${pass?'var(--green)':'var(--yellow)'}">${correct} / ${total}問</div>
+      <div style="font-size:14px;color:var(--muted)">正解率 ${pct}%  （合格ライン：80%）</div>
+      <div class="btn-row" style="justify-content:center;margin-top:24px">
+        <button class="btn btn-yellow" onclick="startExam()">別の問題で再挑戦</button>
+        <button class="btn btn-ghost" onclick="showChapter(0)">チャプターに戻る</button>
+      </div>
+    </div>
+    <div class="exam-breakdown" style="margin-top:24px">
+      <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:12px;letter-spacing:.05em">問題ごとの結果</div>
+      ${results.map((r,i)=>`
+        <div class="exam-breakdown-item ${r.ok?'correct-item':'wrong-item'}">
+          <span style="flex-shrink:0;font-weight:700;color:${r.ok?'var(--green)':'var(--red)'}">${r.ok?'✓':'✗'}</span>
+          <div>
+            <div style="font-weight:600;color:${r.ok?'#ccc':'#ddd'};margin-bottom:3px">問${i+1}. ${r.q}</div>
+            ${!r.ok?`<div style="font-size:12px;color:var(--red);margin-bottom:2px">あなたの回答: ${r.selected>=0?r.opts[r.selected]:'未回答'}</div>`:''}
+            ${!r.ok?`<div style="font-size:12px;color:var(--green);margin-bottom:4px">正解: ${r.opts[r.correct]}</div>`:''}
+            <div style="font-size:12px;color:#888">${r.exp}</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// Init
+renderEx0();renderRelEx();renderSWEx();renderSubtypeEx();renderClassify();
+</script>
+</body>
+</html>
