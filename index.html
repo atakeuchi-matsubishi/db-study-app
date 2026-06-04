@@ -770,7 +770,7 @@ function checkQuiz(chIdx){
         else if(o.classList.contains('selected'))o.classList.add('wrong');
         o.classList.remove('selected');
       });
-      if(fb){fb.className='feedback '+(ok?'correct':'wrong');fb.textContent=(ok?'✓ ':' ✗ ')+(quizFB[qid]?.[ok?exp:'def']||（ok?'正解！':'不正解です。'));}
+      if(fb){fb.className='feedback '+(ok?'correct':'wrong');fb.textContent=(ok?'✓ ':' ✗ ')+(quizFB[qid]?.[ok?exp:'def']||(ok?'正解！':'不正解です。'));}
       if(ok)correct++;
     }else{
       const sel=cont.querySelector('.option.selected');
@@ -781,7 +781,7 @@ function checkQuiz(chIdx){
         else if(o.classList.contains('selected'))o.classList.add('wrong');
         o.classList.remove('selected');
       });
-      if(fb){fb.className='feedback '+(ok?'correct':'wrong');fb.textContent=(ok?'✓ ':'✗ ')+(quizFB[qid]?.[ok?ans:(val||'_')]||（ok?'正解！':'不正解。正解は '+ans+' です。'));}
+      if(fb){fb.className='feedback '+(ok?'correct':'wrong');fb.textContent=(ok?'✓ ':'✗ ')+(quizFB[qid]?.[ok?ans:(val||'_')]||(ok?'正解！':'不正解。正解は '+ans+' です。'));}
       if(ok)correct++;
     }
   });
